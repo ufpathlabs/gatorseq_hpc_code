@@ -46,6 +46,7 @@ input:
 output:
   file "${params.merge_bam}" into mapped_reads
   file 'dedup.bam' into dedup
+  file 'dedup.bam.bai' into dedupbai
   file 'sample.vcf' into outputVcf
   
 """	
@@ -75,6 +76,83 @@ output:
 	vt decompose -s sample_variant.vcf.gz |	vt normalize -r ${params.human_ref_fasta} - | vcf-sort >sample.vcf 
 """
 }
+
+process generate_metrics_file {
+echo true
+MERGED_TARGET_BED_FILE= file(params.MERGED_TARGET_BED_FILE) 
+PADDED_TARGET_BED_FILE= file(params.PADDED_TARGET_BED_FILE )
+PROBE_TARGET_BED_FILE= file(params.TARGET_BED_FILE) 
+METRICS_SCRIPT=file("metrics.sh")
+
+input:
+  file bamfile from dedup
+  file vcffile from outputVcf
+  file baibamfile from dedupbai
+  file merged_target_bed_file from MERGED_TARGET_BED_FILE
+  file padded_target_bed_file from PADDED_TARGET_BED_FILE
+  file probe_target_bed_file from PROBE_TARGET_BED_FILE
+  file metrics_script from METRICS_SCRIPT
+
+ output:
+  file 'sample.summary.csv' into summary
+  file 'sample.coverage.csv' into coverage
+
+  
+"""	
+    bam stats --in  ${bamfile} --bufferSize ${params.generate_metrics_file.buffer_size} --basic &>${params.generate_metrics_file.total_bamutils_out}
+	
+	bam stats --in  ${bamfile} --bufferSize ${params.generate_metrics_file.buffer_size}\
+	--basic --regionList ${merged_target_bed_file} &> ${params.generate_metrics_file.target_bamutils_out}
+
+	bam stats --in  ${bamfile} --bufferSize ${params.generate_metrics_file.buffer_size} \
+		--basic --regionList ${padded_target_bed_file} &>${params.generate_metrics_file.paddedtarget_bamutils_out}
+		
+	sambamba view -H --nthreads=1  ${bamfile} |\
+	grep -P  "^@SQ\tSN:" |cut -f2,3 |sed 's/SN://g' |\
+	sed 's/LN://g' >${params.generate_metrics_file.sort_order_chr_names}
+	
+	bedtools sort -i ${merged_target_bed_file} \
+	-faidx ${params.generate_metrics_file.sort_order_chr_names} >${params.generate_metrics_file.resort_merged_target_bed_file}
+
+	bedtools coverage -sorted -d -a ${params.generate_metrics_file.resort_merged_target_bed_file} \
+		-b ${bamfile} \
+		-g ${params.generate_metrics_file.sort_order_chr_names} >${params.generate_metrics_file.coverage_out_merged_target_bed_file} 
+		
+    bedtools sort -i ${probe_target_bed_file} \
+	   -faidx ${params.generate_metrics_file.sort_order_chr_names} >${params.generate_metrics_file.resort_probe_target_bed_file}
+
+    bedtools coverage -sorted -d -a ${params.generate_metrics_file.resort_probe_target_bed_file} \
+		-b ${bamfile} \
+		-g ${params.generate_metrics_file.sort_order_chr_names} >${params.generate_metrics_file.coverage_out_probe_target_bed_file} 
+
+    bedtools groupby -g 1,2,3,4 -c 6 -o mean,stdev -i ${params.generate_metrics_file.coverage_out_probe_target_bed_file} >${params.generate_metrics_file.mean_stdev_coverage_out_probe_target_bed_file} 
+	
+	bamtools  stats -insert -in ${bamfile} >${params.generate_metrics_file.bamtools_stats_out}
+	
+	rtg vcfstats ${vcffile} >${params.generate_metrics_file.rtgtools_stats_out}
+	
+	sh ${metrics_script} \
+            ${bamfile} \
+            ${vcffile} \
+            sample.summary.csv \
+            ${params.generate_metrics_file.total_bamutils_out} \
+            ${params.generate_metrics_file.target_bamutils_out} \
+            ${params.generate_metrics_file.paddedtarget_bamutils_out} \
+            ${params.generate_metrics_file.coverage_out_merged_target_bed_file} \
+            ${params.generate_metrics_file.bamtools_stats_out} \
+            ${params.generate_metrics_file.rtgtools_stats_out} \
+            ${params.generate_metrics_file.padding_size} \
+            ${params.generate_metrics_file.merged_target_bed_file} \
+            ${params.generate_metrics_file.padded_target_bed_file} \
+            ${params.generate_metrics_file.mean_stdev_coverage_out_probe_target_bed_file} \
+            ${params.generate_metrics_file.sample_id} \
+            ${params.generate_metrics_file.sample_name} \
+            ${params.generate_metrics_file.run_folder} \
+            ${params.human_ref_fasta} \
+            sample.coverage.csv
+"""
+}
+
 
 def sample(Path path) {
   def name = path.getFileName().toString()
