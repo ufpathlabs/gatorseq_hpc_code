@@ -20,8 +20,7 @@ new Yaml().load(yaml_parameter).each { k, v -> params[k] = v }
           .map { pair1, pair2 -> [pair1[0], pair1[1], pair2[1] ] }.tap(alignmentReadPairs)
 
 process bwa_map_sort {
-    cpus 4     
-    echo true
+echo true
 
 input:
     set s, r1, r2 from read_pairs
@@ -37,12 +36,12 @@ output:
 }
 
 process merging {
-cpus 4
 echo true
+PADDED_TARGET_BED_FILE=file(params.PADDED_TARGET_BED_FILE)
 
 input:
   file bamfiles from contigsBam.collect()
-  file  'PADDED_TARGET_BED_FILE' from params.PADDED_TARGET_BED_FILE
+  file bedpath from PADDED_TARGET_BED_FILE
 
 output:
   file "${params.merge_bam}" into mapped_reads
@@ -62,7 +61,7 @@ output:
             -G ${params.human_ref_fasta} \
             -f ${params.AF_THR} -N sample_name -b dedup.bam \
             -c 1 -S 2 -E 3 -g 4 \
-            -th {threads} -t -r 4 -B 2 -m 6 -P 5 -O 25 -q 25 ${PADDED_TARGET_BED_FILE} | \
+            -th 8 -t -r 4 -B 2 -m 6 -P 5 -O 25 -q 25 ${bedpath} | \
         /apps/gcc/5.2.0/vardictjava/20160521/VarDict/teststrandbias.R | \
         /apps/gcc/5.2.0/vardictjava/20160521/VarDict/var2vcf_valid.pl -N sample_name -E -f ${params.AF_THR} \
         > sample_variant.vcf

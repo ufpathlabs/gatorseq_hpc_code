@@ -1,5 +1,4 @@
-MINICONDA_BIN: '../GatorSeq_Software/miniconda3/bin'
-HPC_ANALYSIS_FOLDER: '../GatorSeq_Analysis'
+HPC_ANALYSIS_FOLDER: 'GatorSeq_Analysis'
 PADDING_SIZE: '250'
 TARGET_BED_FILE: 'GatorseqV2_117_GenePanel_Translocation_MSI_SampleID_AIMs_Gender_probes.bed'
 MERGED_TARGET_BED_FILE: 'GatorseqV2_117_GenePanel_Translocation_MSI_SampleID_AIMs_Gender_probes_merged.bed'
