@@ -125,20 +125,20 @@ output:
 
 	bedtools coverage -sorted -d -a ${params.generate_metrics_file.resort_merged_target_bed_file} \
 		-b ${bamfile} \
-		-g ${params.generate_metrics_file.sort_order_chr_names} >${params.generate_metrics_file.coverage_out_merged_target_bed_file} 
+		-g ${params.generate_metrics_file.sort_order_chr_names} >${params.generate_metrics_file.coverage_out_merged_target_bed_file} 2> ${params.generate_metrics_file.log}
 		
     bedtools sort -i ${probe_target_bed_file} \
 	   -faidx ${params.generate_metrics_file.sort_order_chr_names} >${params.generate_metrics_file.resort_probe_target_bed_file}
 
     bedtools coverage -sorted -d -a ${params.generate_metrics_file.resort_probe_target_bed_file} \
 		-b ${bamfile} \
-		-g ${params.generate_metrics_file.sort_order_chr_names} >${params.generate_metrics_file.coverage_out_probe_target_bed_file} 
+		-g ${params.generate_metrics_file.sort_order_chr_names} >${params.generate_metrics_file.coverage_out_probe_target_bed_file} 2> ${params.generate_metrics_file.log}
 
     bedtools groupby -g 1,2,3,4 -c 6 -o mean,stdev -i ${params.generate_metrics_file.coverage_out_probe_target_bed_file} >${params.generate_metrics_file.mean_stdev_coverage_out_probe_target_bed_file} 
 	
-	bamtools  stats -insert -in ${bamfile} >${params.generate_metrics_file.bamtools_stats_out}
+	bamtools  stats -insert -in ${bamfile} >${params.generate_metrics_file.bamtools_stats_out} 2>> ${params.generate_metrics_file.log}
 	
-	rtg vcfstats ${vcffile} >${params.generate_metrics_file.rtgtools_stats_out}
+	rtg vcfstats ${vcffile} >${params.generate_metrics_file.rtgtools_stats_out} 2>> ${params.generate_metrics_file.log}
 	
 	sh ${metrics_script} \
             ${bamfile} \
@@ -158,7 +158,7 @@ output:
             ${params.generate_metrics_file.sample_name} \
             ${params.generate_metrics_file.run_folder} \
             ${params.human_ref_fasta} \
-            ${params.generate_metrics_file.coverage_file}
+            ${params.generate_metrics_file.coverage_file} 2>> ${params.generate_metrics_file.log}
 """
 }
 
