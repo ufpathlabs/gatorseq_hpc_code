@@ -15,28 +15,34 @@ new Yaml().load(yaml_parameter).each { k, v -> params[k] = v }
       .map { path -> tuple(sample(path), path) }
 
   alignmentReadPairs = Channel.create()
+  
   read_pairs = reads1
           .phase(reads2)
           .map { pair1, pair2 -> [pair1[0], pair1[1], pair2[1] ] }.tap(alignmentReadPairs)
 
 process bwa_map_sort {
+
 echo true
 
 input:
     set s, r1, r2 from read_pairs
+	
 output:
 	file "${s}.bwa_map_sort.bam" into contigsBam
 
 	"""
-	bwa mem    -t 4  -M ${params.human_ref_bwa}  ${r1} ${r2} | sambamba view --sam-input  --compression-level 0   --nthreads 1  --format bam   --output-filename ${s}.bwa_map.bam /dev/stdin
+	
+	bwa mem    -t ${params.bwa_map_sort.threads}  -M ${params.human_ref_bwa}  ${r1} ${r2} 2> ${params.bwa_map_sort.log} | sambamba view --sam-input  --compression-level 0   --nthreads 1  --format bam   --output-filename ${s}.bwa_map.bam /dev/stdin 2>> ${params.bwa_map_sort.log}
 		
-	sambamba sort --nthreads=1 --memory-limit=8G  --tmpdir= tempdir   --out=${s}.bwa_map_sort.bam   --compression-level=0    ${s}.bwa_map.bam
+	sambamba sort --nthreads=${params.bwa_map_sort.threads} --memory-limit=${params.bwa_map_sort.memory}  --tmpdir= tempdir   --out=${s}.bwa_map_sort.bam   --compression-level=0    ${s}.bwa_map.bam 2>> ${params.bwa_map_sort.log}
 	
 	"""
 }
 
 process merging {
+
 echo true
+
 PADDED_TARGET_BED_FILE=file(params.PADDED_TARGET_BED_FILE)
 
 input:
@@ -44,15 +50,15 @@ input:
   file bedpath from PADDED_TARGET_BED_FILE
 
 output:
-  file "${params.merge_bam}" into mapped_reads
-  file 'dedup.bam' into dedup
-  file 'dedup.bam.bai' into dedupbai
-  file 'sample.vcf' into outputVcf
+  file "${params.merging.merge_bam}" into mapped_reads
+  file "${params.merging.dedup_bam}" into dedup
+  file "${params.merging.dedup_bam_bai}" into dedupbai
+  file "${params.merging.vcf_file}" into outputVcf
   
 """	
-    sambamba merge --nthreads 8 --compression-level 0 ${params.merge_bam} ${bamfiles} 
+    sambamba merge --nthreads ${params.merging.threads} --compression-level 0 ${params.merging.merge_bam} ${bamfiles} &>${params.merging.log} 
 	
-    sambamba markdup --nthreads 8 --compression-level 9   --tmpdir temp_dir ${params.merge_bam} dedup.bam 
+    sambamba markdup --nthreads ${params.merging.threads} --compression-level 9   --tmpdir temp_dir ${params.merging.merge_bam} ${params.merging.dedup_bam} &>>${params.merging.log} 
 	
 	eval "module load gcc/5.2.0; module load vardictjava/20160521; module load perl/5.20.0; module load R/3.0.2; module load vcftools/0.1.14; module load vt/20160129;"
 	
@@ -60,25 +66,29 @@ output:
 	
 	/apps/gcc/5.2.0/vardictjava/20160521/build/install/VarDict/bin/VarDict \
             -G ${params.human_ref_fasta} \
-            -f ${params.AF_THR} -N sample_name -b dedup.bam \
+            -f ${params.AF_THR} -N sample_name -b ${params.merging.dedup_bam} \
             -c 1 -S 2 -E 3 -g 4 \
-            -th 8 -t -r 4 -B 2 -m 6 -P 5 -O 25 -q 25 ${bedpath} | \
+            -th 8 -t -r 4 -B 2 -m 6 -P 5 -O 25 -q 25 ${bedpath} 2>> ${params.merging.log}  | \
         /apps/gcc/5.2.0/vardictjava/20160521/VarDict/teststrandbias.R | \
         /apps/gcc/5.2.0/vardictjava/20160521/VarDict/var2vcf_valid.pl -N sample_name -E -f ${params.AF_THR} \
-        > sample_variant.vcf
+        > ${params.merging.vardict_vcf_file}  2>> ${params.merging.log} 
 	
-	     unset _JAVA_OPTIONS;
+	unset _JAVA_OPTIONS;
 
-    bgzip -f sample_variant.vcf
+    bgzip -f sample_variant.vcf &>> ${params.merging.log} 
 	
-	tabix -f sample_variant.vcf.gz 
+	tabix -f sample_variant.vcf.gz &>> ${params.merging.log} 
 	
-	vt decompose -s sample_variant.vcf.gz |	vt normalize -r ${params.human_ref_fasta} - | vcf-sort >sample.vcf 
+	vt decompose -s sample_variant.vcf.gz  2>> ${params.merging.log}  |	vt normalize -r ${params.human_ref_fasta} - 2>> ${params.merging.log}  | vcf-sort >${params.merging.vcf_file}  2>> ${params.merging.log} 
+	
 """
+
 }
 
 process generate_metrics_file {
+
 echo true
+
 MERGED_TARGET_BED_FILE= file(params.MERGED_TARGET_BED_FILE) 
 PADDED_TARGET_BED_FILE= file(params.PADDED_TARGET_BED_FILE )
 PROBE_TARGET_BED_FILE= file(params.TARGET_BED_FILE) 
@@ -93,11 +103,10 @@ input:
   file probe_target_bed_file from PROBE_TARGET_BED_FILE
   file metrics_script from METRICS_SCRIPT
 
- output:
-  file 'sample.summary.csv' into summary
-  file 'sample.coverage.csv' into coverage
+output:
+  file "${params.generate_metrics_file.metrics_file}" into summary
+  file "${params.generate_metrics_file.coverage_file}" into coverage
 
-  
 """	
     bam stats --in  ${bamfile} --bufferSize ${params.generate_metrics_file.buffer_size} --basic &>${params.generate_metrics_file.total_bamutils_out}
 	
@@ -134,7 +143,7 @@ input:
 	sh ${metrics_script} \
             ${bamfile} \
             ${vcffile} \
-            sample.summary.csv \
+            ${params.generate_metrics_file.metrics_file} \
             ${params.generate_metrics_file.total_bamutils_out} \
             ${params.generate_metrics_file.target_bamutils_out} \
             ${params.generate_metrics_file.paddedtarget_bamutils_out} \
@@ -149,7 +158,7 @@ input:
             ${params.generate_metrics_file.sample_name} \
             ${params.generate_metrics_file.run_folder} \
             ${params.human_ref_fasta} \
-            sample.coverage.csv
+            ${params.generate_metrics_file.coverage_file}
 """
 }
 
