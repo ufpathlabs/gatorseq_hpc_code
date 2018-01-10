@@ -181,11 +181,14 @@ output:
   
 
 """	
+
    echo "MERGED LOG FILES" >${params.merge_log_benchmark_files.final_logs}
-            cat ${bwa_sort_log} >>${params.merge_log_benchmark_files.final_logs}     
-            echo "" >>${params.merge_log_benchmark_files.final_logs}
-            echo "##---------------------------------------------------------##" >>${params.merge_log_benchmark_files.final_logs}
-            cat ${merge_log} >>${params.merge_log_benchmark_files.final_logs}
+        for every f in 1 2 3;
+		do 
+		 echo $f
+
+        done
+
 """
 }
 
