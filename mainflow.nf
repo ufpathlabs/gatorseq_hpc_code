@@ -179,15 +179,32 @@ input:
 output:
   file "${params.merge_log_benchmark_files.final_logs}" into final_log
   
-
+script:
 """	
    echo "MERGED LOG FILES" >${params.merge_log_benchmark_files.final_logs}
-            cat ${bwa_sort_log} >>${params.merge_log_benchmark_files.final_logs}     
+        for f in ${bwa_sort_log};
+        do
             echo "" >>${params.merge_log_benchmark_files.final_logs}
             echo "##---------------------------------------------------------##" >>${params.merge_log_benchmark_files.final_logs}
-            cat ${merge_log} >>${params.merge_log_benchmark_files.final_logs}
+            echo "##-------------" \$f "-------------##" >>${params.merge_log_benchmark_files.final_logs}
+            echo "##---------------------------------------------------------##" >>${params.merge_log_benchmark_files.final_logs}
+            cat \$f >>${params.merge_log_benchmark_files.final_logs}
+        done
+
+        for f in ${merge_log};
+        do
+            echo "" >>${params.merge_log_benchmark_files.final_logs}
+            echo "##---------------------------------------------------------##" >>${params.merge_log_benchmark_files.final_logs}
+            echo "##-------------" \$f "-------------##" >>${params.merge_log_benchmark_files.final_logs}
+            echo "##---------------------------------------------------------##" >>${params.merge_log_benchmark_files.final_logs}
+            cat \$f >>${params.merge_log_benchmark_files.final_logs}
+        done
+
+
+
 """
 }
+
 
 
 
