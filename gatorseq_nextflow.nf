@@ -253,9 +253,18 @@ script:
 """
 }
 
-workflow.onComplete {
-    onsuccess() 
-    println "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
+workflow.onComplete { 
+	if( workflow.success)
+		{
+		onsuccess()
+		println "Success"
+		}
+	else 
+		{
+		onfailure()
+		println "Failed"
+		}
+   
 }
 
 workflow.onError {
