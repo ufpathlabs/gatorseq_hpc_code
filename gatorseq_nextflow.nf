@@ -1,5 +1,12 @@
 #!/usr/bin/env nextflow
 
+
+ON_SUCCESS_FILE = params.SAMPLE_DIR + '/' + 'SUCCESS.txt'
+ON_FAILURE_FILE = params.SAMPLE_DIR + '/' + 'FAILED.txt'
+ON_START_FILE = params.SAMPLE_DIR + '/' + 'START.txt'
+
+onstart()
+
 params.pairs = params.FASTQ_FILES_DIR+"/*_R{1,2}_*.fastq.gz"
 println params.pairs
 
@@ -57,12 +64,12 @@ output:
 }
 
 process merging {
+publishDir params.SAMPLE_DIR, mode: 'copy', overwrite: true,pattern: "*.bam*"
 
 input:
   file bamfiles from contigsBam.collect()
 
 output:
-  //file "${params.merging.merge_bam}" into mapped_reads
   file "${params.merging.dedup_bam}" into dedup
   file "${params.merging.dedup_bam_bai}" into dedupbai
   file "${params.merging.log}" into merging_log
@@ -77,6 +84,7 @@ output:
 
 process vardict {
 
+publishDir params.SAMPLE_DIR, mode: 'copy', overwrite: true,pattern: "*.vcf"
 PADDED_TARGET_BED_FILE=file(params.PADDED_TARGET_BED_FILE)
 
 input:
@@ -116,6 +124,8 @@ output:
 }
 
 process generate_metrics_file {
+
+publishDir params.SAMPLE_DIR, mode: 'copy', overwrite: true,pattern: "*.csv"
 
 MERGED_TARGET_BED_FILE= file(params.MERGED_TARGET_BED_FILE) 
 PADDED_TARGET_BED_FILE= file(params.PADDED_TARGET_BED_FILE )
@@ -193,17 +203,21 @@ output:
 
 process merge_log_benchmark_files {
 
+publishDir params.SAMPLE_DIR, mode: 'copy', overwrite: true,pattern: "*.txt"
+
 echo true
 
 input:
   file metrics_file from summary
   file bwa_sort_log from bwa_map_sort_log.collect()
   file merge_log from merging_log.collect()
+  file vardict_log from vardict_log.collect()
   file metrics_log from generate_metrics_file_log.collect()
 
 
 output:
   file "${params.merge_log_benchmark_files.final_logs}" into final_log
+  
   
 script:
 """	
@@ -237,4 +251,40 @@ script:
 
 
 """
+}
+
+workflow.onComplete {
+    onsuccess() 
+    println "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
+}
+
+workflow.onError {
+    onfailure()
+}
+
+
+def onstart(){
+	def file = new File(ON_START_FILE)
+	current_date =new Date().format( 'yyyy:MM:dd:hh:mm:ss' )
+	file.append( "GSBW_VERSION:\t"+params.GSBW_VERSION+"\n")
+	file.append("Workflow started at\t")
+	file.append("yyyy:mm:dd:hh:mm:ss\t" )
+	file.append(current_date)
+}
+
+def onsuccess(){
+	def file = new File(ON_SUCCESS_FILE)
+	current_date =new Date().format( 'yyyy:MM:dd:hh:mm:ss' )
+	file.append( "GSBW_VERSION:\t"+params.GSBW_VERSION+"\n")
+	file.append("Workflow started at\t")
+	file.append("yyyy:mm:dd:hh:mm:ss\t" )
+	file.append(current_date)
+	file.append("\n")
+}
+
+def onfailure(){
+ 	def file = new File(ON_FAILURE_FILE)
+	current_date =new Date().format( 'yyyy-MM-dd' )
+	file.append("Workflow failed at: ")
+	file.append(current_date)
 }
