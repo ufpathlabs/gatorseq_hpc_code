@@ -1,7 +1,6 @@
 #!/usr/bin/env nextflow
 
 params.pairs = params.FASTQ_FILES_DIR+"/*_R{1,2}_*.fastq.gz"
-//params.pairs = params.SAMPLE_DIR+"/*_R{1,2}_*.fastq.gz"
 println params.pairs
 
 println params.bwa_map_sort.temp_dir
@@ -14,12 +13,8 @@ Channel
 
 print read_pairs 
 
-//xrg_id="@RG\tID:" + SAMPLE_NAME + "_" + lane_num +\
-//          "\tLB:" + RUN_NAME + "\tSM:" + SAMPLE_NAME + "\tPL:ILLUMINA\tPU:" +lane_num
-
 process bwa_map_sort {
 lane_num=1
-//params.dummy_rg_id="@RG\tID:"+ params.SAMPLE_NAME + "_" + lane_num + "\tLB:" + params.RUN_NAME + "\tSM:" + params.SAMPLE_NAME + "\tPL:ILLUMINA\tPU:" +lane_num
 params.dummy_rg_id="'"+'@RG\\tID:'+ params.SAMPLE_NAME + "_" + lane_num + '\\tLB:' + params.RUN_NAME + '\\tSM:' + params.SAMPLE_NAME + '\\tPL:ILLUMINA\\tPU:' +lane_num+"'"
 println params.dummy_rg_id
 
@@ -34,6 +29,8 @@ output:
 	file "${s}${params.bwa_map_sort.log}" into bwa_map_sort_log
 
 	"""
+    #touch ${s}${params.bwa_map_sort.log}
+    #touch ${s}.bwa_map_sort.bam
 
 	bwa mem  -R ${params.dummy_rg_id} \
         -t ${params.bwa_map_sort.threads} \
@@ -54,26 +51,24 @@ output:
         --compression-level=0    \
         ${s}.bwa_map.bam 2>> ${s}${params.bwa_map_sort.log}
 
-    ##if [ -d ${params.temp_dir} ]; then rmdir ${params.temp_dir}; fi
+    if [ -d ${params.bwa_map_sort.temp_dir} ]; then rmdir ${params.bwa_map_sort.temp_dir}; fi
 	
 	"""
 }
 
-/*
 process merging {
 
 input:
   file bamfiles from contigsBam.collect()
 
 output:
-  file "${params.merging.merge_bam}" into mapped_reads
+  //file "${params.merging.merge_bam}" into mapped_reads
   file "${params.merging.dedup_bam}" into dedup
   file "${params.merging.dedup_bam_bai}" into dedupbai
   file "${params.merging.log}" into merging_log
   
 """	
     sambamba merge --nthreads ${params.merging.threads} --compression-level 0 ${params.merging.merge_bam} ${bamfiles} &>${params.merging.log} 
-	
     sambamba markdup --nthreads ${params.merging.threads} --compression-level 9   --tmpdir temp_dir ${params.merging.merge_bam} ${params.merging.dedup_bam} &>>${params.merging.log} 
 	
 """
@@ -85,8 +80,8 @@ process vardict {
 PADDED_TARGET_BED_FILE=file(params.PADDED_TARGET_BED_FILE)
 
 input:
-  file "${params.merging.dedup_bam}" into dedup
-  file "${params.merging.dedup_bam_bai}" into dedupbai
+  file bamfile from dedup
+  file baibamfile from dedupbai
   file bedpath from PADDED_TARGET_BED_FILE
 
 output:
@@ -101,7 +96,7 @@ output:
 	
 	/apps/gcc/5.2.0/vardictjava/20160521/build/install/VarDict/bin/VarDict \
             -G ${params.human_ref_fasta} \
-            -f ${params.vardict.AF_THR} -N ${params.SAMPLE_NAME} -b ${params.vardict.dedup_bam} \
+            -f ${params.vardict.AF_THR} -N ${params.SAMPLE_NAME} -b ${bamfile} \
             -c 1 -S 2 -E 3 -g 4 \
             -th 8 -t -r 4 -B 2 -m 6 -P 5 -O 25 -q 25 ${bedpath} 2>> ${params.vardict.log}  | \
         /apps/gcc/5.2.0/vardictjava/20160521/VarDict/teststrandbias.R | \
@@ -114,14 +109,13 @@ output:
 	
 	tabix -f ${params.vardict.vardict_vcf_file}.gz &>> ${params.vardict.log} 
 	
-	vt decompose -s sample_variant.vcf.gz  2>> ${params.vardict.log}  |	vt normalize -r ${params.human_ref_fasta} - 2>> ${params.vardict.log}  | vcf-sort >${params.vardict.vcf_file}  2>> ${params.vardict.log} 
+	vt decompose -s ${params.vardict.vardict_vcf_file}.gz  2>> ${params.vardict.log}  |	vt normalize -r ${params.human_ref_fasta} - 2>> ${params.vardict.log}  | vcf-sort >${params.vardict.vcf_file}  2>> ${params.vardict.log} 
 	
 """
 
 }
-process generate_metrics_file {
 
-echo true
+process generate_metrics_file {
 
 MERGED_TARGET_BED_FILE= file(params.MERGED_TARGET_BED_FILE) 
 PADDED_TARGET_BED_FILE= file(params.PADDED_TARGET_BED_FILE )
@@ -232,8 +226,15 @@ script:
             cat \$f >>${params.merge_log_benchmark_files.final_logs}
         done
 
+        for f in ${vardict_log};
+        do
+            echo "" >>${params.merge_log_benchmark_files.final_logs}
+            echo "##---------------------------------------------------------##" >>${params.merge_log_benchmark_files.final_logs}
+            echo "##-------------" \$f "-------------##" >>${params.merge_log_benchmark_files.final_logs}
+            echo "##---------------------------------------------------------##" >>${params.merge_log_benchmark_files.final_logs}
+            cat \$f >>${params.merge_log_benchmark_files.final_logs}
+        done
 
 
 """
 }
-*/
