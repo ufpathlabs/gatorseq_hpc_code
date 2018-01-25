@@ -8,9 +8,6 @@ ON_START_FILE = params.SAMPLE_DIR + '/' + 'START.txt'
 onstart()
 
 params.pairs = params.FASTQ_FILES_DIR+"/*_R{1,2}_*.fastq.gz"
-println params.pairs
-
-println params.bwa_map_sort.temp_dir
 
 Channel
     .fromFilePairs( params.pairs, flat: true)                                     
@@ -44,8 +41,8 @@ output:
         -M ${params.human_ref_bwa} \
         ${r1} ${r2} 2> ${s}${params.bwa_map_sort.log} |\
     sambamba view --sam-input \
-        --compression-level 0   \
-        --nthreads 1  \
+        --compression-level ${params.bwa_map_sort.compression_level}   \
+        --nthreads ${params.bwa_map_sort.sambamba_threads}  \
         --format bam   \
         --output-filename ${s}.bwa_map.bam \
         /dev/stdin 2>> ${s}${params.bwa_map_sort.log}
@@ -53,12 +50,12 @@ output:
 	sambamba sort \
         --nthreads=${params.bwa_map_sort.threads} \
         --memory-limit=${params.bwa_map_sort.memory}  \
-        --tmpdir=${params.bwa_map_sort.temp_dir}   \
+        --tmpdir=temp_dir  \
         --out=${s}.bwa_map_sort.bam   \
-        --compression-level=0    \
+        --compression-level=${params.bwa_map_sort.compression_level}    \
         ${s}.bwa_map.bam 2>> ${s}${params.bwa_map_sort.log}
 
-    if [ -d ${params.bwa_map_sort.temp_dir} ]; then rmdir ${params.bwa_map_sort.temp_dir}; fi
+    #if [ -d ${params.bwa_map_sort.temp_dir} ]; then rmdir ${params.bwa_map_sort.temp_dir}; fi
 	
 	"""
 }
@@ -256,13 +253,11 @@ script:
 workflow.onComplete { 
 	if( workflow.success)
 		{
-		onsuccess()
-		println "Success"
+			onsuccess()
 		}
 	else 
 		{
-		onfailure()
-		println "Failed"
+			onfailure()			
 		}
    
 }
@@ -273,27 +268,55 @@ workflow.onError {
 
 
 def onstart(){
-	def file = new File(ON_START_FILE)
-	current_date =new Date().format( 'yyyy:MM:dd:hh:mm:ss' )
-	file.append( "GSBW_VERSION:\t"+params.GSBW_VERSION+"\n")
-	file.append("Workflow started at\t")
-	file.append("yyyy:mm:dd:hh:mm:ss\t" )
-	file.append(current_date)
-}
+	createFile(ON_START_FILE,"Workflow started at\t")
+	println "STARTED"
+	}
 
 def onsuccess(){
-	def file = new File(ON_SUCCESS_FILE)
-	current_date =new Date().format( 'yyyy:MM:dd:hh:mm:ss' )
-	file.append( "GSBW_VERSION:\t"+params.GSBW_VERSION+"\n")
-	file.append("Workflow started at\t")
-	file.append("yyyy:mm:dd:hh:mm:ss\t" )
-	file.append(current_date)
-	file.append("\n")
+	createFile(ON_SUCCESS_FILE,"Workflow finished successfully at\t")
+	cleanup()
+	println "SUCCESS"
 }
 
 def onfailure(){
- 	def file = new File(ON_FAILURE_FILE)
-	current_date =new Date().format( 'yyyy-MM-dd' )
-	file.append("Workflow failed at: ")
-	file.append(current_date)
+	createFile(ON_FAILURE_FILE,"Workflow failed at\t")
+	println "FAILED"
+}
+
+def createFile(name,message){
+	file = new File(name)
+	file.append( "GSBW_VERSION:\t")
+	file.append(params.GSBW_VERSION)
+	file.append("\n")
+	file.append(message)
+	file.append("yyyy:mm:dd:hh:mm:ss\t" )
+	file.append(new Date().format( 'yyyy:MM:dd:hh:mm:ss' ))
+	file.append("\n")
+}
+
+def cleanup(){
+
+	println "Deleting Work Directory :" + params.SAMPLE_DIR + "/work"
+	result= new File(params.SAMPLE_DIR+"/work").deleteDir()
+	if ( result )
+		println "Work Directory deleted Successfully"
+	else 
+		println "Work Directory deletion Failed"
+	
+	
+	println "Deleting Nextflow Cache Directory :" + params.SAMPLE_DIR + "/.nextflow"
+	result= new File(params.SAMPLE_DIR+"/.nextflow").deleteDir()
+	if ( result )
+		println "Nextflow Cache Directory deleted Successfully"
+	else 
+		println "Nextflow Cache Directory deletion Failed"
+		
+	println "Deleting Nextflow Log file :" + params.SAMPLE_DIR + "/.nextflow.log"
+	
+	
+	result= new File(params.SAMPLE_DIR+"/.nextflow.log").delete()
+	if ( result )
+		println "Nextflow Log file deleted Successfully"
+	else 
+		println "Nextflow Log file deletion Failed"
 }
