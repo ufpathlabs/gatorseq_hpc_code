@@ -274,7 +274,11 @@ def onstart(){
 
 def onsuccess(){
 	createFile(ON_SUCCESS_FILE,"Workflow finished successfully at\t")
-	cleanup()
+	if( params.CLEAN_UP == 0 ){
+		cleanup()
+	}
+	else 
+		println "NO CLEAN_UP requested"
 	println "SUCCESS"
 }
 
