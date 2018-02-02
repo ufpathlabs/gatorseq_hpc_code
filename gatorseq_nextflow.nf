@@ -299,26 +299,25 @@ def createFile(name,message){
 }
 
 def cleanup(){
-
-	println "Deleting Work Directory :" + params.SAMPLE_DIR + "/work"
-	result= new File(params.SAMPLE_DIR+"/work").deleteDir()
+	println "Deleting Work Directory : work "
+	result= new File("work").deleteDir()
 	if ( result )
 		println "Work Directory deleted Successfully"
 	else 
 		println "Work Directory deletion Failed"
 	
 	
-	println "Deleting Nextflow Cache Directory :" + params.SAMPLE_DIR + "/.nextflow"
-	result= new File(params.SAMPLE_DIR+"/.nextflow").deleteDir()
+	println "Deleting Nextflow Cache Directory: .nextflow"
+	result= new File(".nextflow").deleteDir()
 	if ( result )
 		println "Nextflow Cache Directory deleted Successfully"
 	else 
 		println "Nextflow Cache Directory deletion Failed"
 		
-	println "Deleting Nextflow Log file :" + params.SAMPLE_DIR + "/.nextflow.log"
+	println "Deleting Nextflow Log file: .nextflow.log"
 	
 	
-	result= new File(params.SAMPLE_DIR+"/.nextflow.log").delete()
+	result= new File(".nextflow.log").delete()
 	if ( result )
 		println "Nextflow Log file deleted Successfully"
 	else 
