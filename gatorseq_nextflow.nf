@@ -274,11 +274,6 @@ def onstart(){
 
 def onsuccess(){
 	createFile(ON_SUCCESS_FILE,"Workflow finished successfully at\t")
-	if( params.CLEAN_UP == 0 ){
-		cleanup()
-	}
-	else 
-		println "NO CLEAN_UP requested"
 	println "SUCCESS"
 }
 
@@ -296,30 +291,4 @@ def createFile(name,message){
 	file.append("yyyy:mm:dd:hh:mm:ss\t" )
 	file.append(new Date().format( 'yyyy:MM:dd:hh:mm:ss' ))
 	file.append("\n")
-}
-
-def cleanup(){
-	println "Deleting Work Directory : work "
-	result= new File("work").deleteDir()
-	if ( result )
-		println "Work Directory deleted Successfully"
-	else 
-		println "Work Directory deletion Failed"
-	
-	
-	println "Deleting Nextflow Cache Directory: .nextflow"
-	result= new File(".nextflow").deleteDir()
-	if ( result )
-		println "Nextflow Cache Directory deleted Successfully"
-	else 
-		println "Nextflow Cache Directory deletion Failed"
-		
-	println "Deleting Nextflow Log file: .nextflow.log"
-	
-	
-	result= new File(".nextflow.log").delete()
-	if ( result )
-		println "Nextflow Log file deleted Successfully"
-	else 
-		println "Nextflow Log file deletion Failed"
 }
