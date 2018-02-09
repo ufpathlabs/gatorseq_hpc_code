@@ -13,7 +13,14 @@ Channel
     .fromFilePairs( params.pairs, flat: true)                                     
     .ifEmpty { error "Cannot find any reads matching: ${params.pairs}" }  
     .splitFastq(by: 5000000, pe:true, file:true, decompress:true)
+    .map{b->[sample(b[1]),b[1],b[2]]}
     .set {read_pairs}
+
+def sample(Path path){
+    def name = path.getFileName().toString()
+    int start = Math.max(0, name.lastIndexOf('/'))
+    return name.substring(start)
+}
 
 print read_pairs 
 
