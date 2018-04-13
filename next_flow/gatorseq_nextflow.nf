@@ -102,16 +102,17 @@ output:
   
 """	
 	
-	eval "module load gcc/5.2.0; module load vardictjava/20160521; module load perl/5.20.0; module load R/3.0.2; module load vcftools/0.1.14; module load vt/20160129;"
+	#eval "module load gcc/5.2.0; module load vardictjava/20160521; module load perl/5.20.0; module load R/3.0.2; module load vcftools/0.1.14; module load vt/20160129;"
 	
 	unset _JAVA_OPTIONS; export _JAVA_OPTIONS="-Xms2g -Xmx20g";
 	
-	/apps/gcc/5.2.0/vardictjava/20160521/build/install/VarDict/bin/VarDict \
+	#/apps/gcc/5.2.0/vardictjava/20160521/build/install/VarDict/bin/VarDict
+	${params.vardict.vardict_program} \
             -G ${params.human_ref_fasta} \
             -f ${params.vardict.AF_THR} -N ${params.SAMPLE_NAME} -b ${bamfile} \
             -c 1 -S 2 -E 3 -g 4 \
             -th 8 -t -r 4 -B 2 -m 6 -P 5 -O 25 -q 25 ${bedpath} 2>> ${params.vardict.log}  | \
-        /apps/gcc/5.2.0/vardictjava/20160521/VarDict/teststrandbias.R | \
+        /apps/gcc/5.2.0/vardictjava/20160521/VarDict/teststrandbias.R 2>> ${params.vardict.log} | \
         /apps/gcc/5.2.0/vardictjava/20160521/VarDict/var2vcf_valid.pl -N ${params.SAMPLE_NAME} -E -f ${params.vardict.AF_THR} \
         > ${params.vardict.vardict_vcf_file}  2>> ${params.vardict.log} 
 	
@@ -121,7 +122,44 @@ output:
 	
 	tabix -f ${params.vardict.vardict_vcf_file}.gz &>> ${params.vardict.log} 
 	
-	vt decompose -s ${params.vardict.vardict_vcf_file}.gz  2>> ${params.vardict.log}  |	vt normalize -r ${params.human_ref_fasta} - 2>> ${params.vardict.log}  | vcf-sort >${params.vardict.vcf_file}  2>> ${params.vardict.log} 
+	#vt decompose -s ${params.vardict.vardict_vcf_file}.gz  2>> ${params.vardict.log}  |	vt normalize -r ${params.human_ref_fasta} - 2>> ${params.vardict.log}  | vcf-sort >${params.vardict.vcf_file}  2>> ${params.vardict.log} 
+	vt decompose -s ${params.vardict.vardict_vcf_file}.gz -o ${params.vardict.decompose_vcf_file} &>> ${params.vardict.log}
+    normVCF -o ${params.vardict.norm_vcf_file} --reference ${params.human_ref_fasta} --sample ${params.vardict.decompose_vcf_file} &>> ${params.vardict.log}
+    transvar ganno --vcf ${params.vardict.norm_vcf_file} --reference ${params.TRANSVAR_REF_GENOME} > ${params.vardict.transvar_temp_file} 2>> ${params.vardict.log}
+
+    cat ${params.vardict.transvar_temp_file} |grep  "^##" > ${params.vardict.transvar_vcf_file} 2>> ${params.vardict.log}
+    cat ${params.vardict.transvar_temp_file} |grep  "^#CHR" | cut -f1-10 >> ${params.vardict.transvar_vcf_file} 2>> ${params.vardict.log}
+    #
+    cat ${params.vardict.transvar_temp_file} |grep -v "^#" | cut -f1-10,14,16 | awk '{print \$1 "\t" \$2 "\t" \$3 "\t" \$4 "\t" \$5 "\t" \$6 "\t" \$7 "\t" \$8 ";COORDINATES=" \$11 ";" \$12 "\t" \$9 "\t" \$10}' 2>> ${params.vardict.log} |sort -k1,1 -k1,1n >> ${params.vardict.transvar_vcf_file} 2>> ${params.vardict.log}
+
+    #module load vep/88.8
+    ${params.vardict.vep_program} \
+        --species ${params.VEP_SPECIES} \
+        --assembly ${params.VEP_ASSEMBLY} \
+        --input_file ${params.vardict.transvar_vcf_file} \
+        --format vcf \
+        --output_file ${params.vardict.vcf_file} \
+        --force_overwrite \
+        --stats_file ${params.vardict.vep_stat_file} \
+        --cache \
+        --dir ${params.VEP_FOLDER} \
+        --dir_cache ${params.VEP_FOLDER} \
+        --dir_plugins ${params.VEP_FOLDER} \
+        --offline \
+        --fasta ${params.VEP_FASTA} \
+        --merged  \
+        --exclude_predicted \
+        --cache_version ${params.VEP_CACHE_VERSION} \
+        --everything \
+        --hgvsg \
+        --flag_pick \
+        --flag_pick_allele \
+        --flag_pick_allele_gene \
+        --xref_refseq \
+        --check_existing \
+        --fork ${params.VEP_FORK} \
+        --vcf --vcf_info_field ANN 2>> ${params.vardict.log}
+
 	
 """
 

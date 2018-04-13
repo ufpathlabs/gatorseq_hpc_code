@@ -1,0 +1,9 @@
+Required Resource Directories:
+/ufrc/chamala/share/GatorSeq_Share/GatorSeq_Resources/GatorSeq_Fastq
+/ufrc/chamala/share/GatorSeq_Share/GatorSeq_Resources/GatorSeq_Analysis
+/ufrc/chamala/share/GatorSeq_Share/GatorSeq_Resources/GatorSeq_Resources
+/ufrc/chamala/share/GatorSeq_Share/GatorSeq_Resources/gatorseq_cronjob
+
+/ufrc/chamala/share/COMMON_RESOURCES/TRANSVAR
+/ufrc/chamala/share/COMMON_RESOURCES/VEP/V88
+
