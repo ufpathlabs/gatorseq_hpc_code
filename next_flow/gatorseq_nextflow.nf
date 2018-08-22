@@ -123,13 +123,15 @@ output:
 	tabix -f ${params.vardict.vardict_vcf_file}.gz &>> ${params.vardict.log} 
 	
 	#vt decompose -s ${params.vardict.vardict_vcf_file}.gz  2>> ${params.vardict.log}  |	vt normalize -r ${params.human_ref_fasta} - 2>> ${params.vardict.log}  | vcf-sort >${params.vardict.vcf_file}  2>> ${params.vardict.log} 
+    
 	vt decompose -s ${params.vardict.vardict_vcf_file}.gz -o ${params.vardict.decompose_vcf_file} &>> ${params.vardict.log}
     normVCF -o ${params.vardict.norm_vcf_file} --reference ${params.human_ref_fasta} --sample ${params.vardict.decompose_vcf_file} &>> ${params.vardict.log}
+
+    #transvar
     transvar ganno --vcf ${params.vardict.norm_vcf_file} --reference ${params.TRANSVAR_REF_GENOME} > ${params.vardict.transvar_temp_file} 2>> ${params.vardict.log}
 
     cat ${params.vardict.transvar_temp_file} |grep  "^##" > ${params.vardict.transvar_vcf_file} 2>> ${params.vardict.log}
     cat ${params.vardict.transvar_temp_file} |grep  "^#CHR" | cut -f1-10 >> ${params.vardict.transvar_vcf_file} 2>> ${params.vardict.log}
-    #
     cat ${params.vardict.transvar_temp_file} |grep -v "^#" | cut -f1-10,14,16 | awk '{print \$1 "\t" \$2 "\t" \$3 "\t" \$4 "\t" \$5 "\t" \$6 "\t" \$7 "\t" \$8 ";COORDINATES=" \$11 ";" \$12 "\t" \$9 "\t" \$10}' 2>> ${params.vardict.log} |sort -k1,1 -k1,1n >> ${params.vardict.transvar_vcf_file} 2>> ${params.vardict.log}
 
     #module load vep/88.8
@@ -165,6 +167,44 @@ output:
 
 }
 
+
+process iCallSV {
+
+//publishDir params.SAMPLE_DIR, mode: 'copy', overwrite: true,pattern: "${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}*"
+
+input:
+  file bamfile from dedup
+  file baibamfile from dedupbai
+
+output:
+  file "${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_only_final.txt" into outputICallSV
+  file "${params.iCallSV.log}" into iCallSV_log
+  
+"""	
+mkdir ${params.iCallSV.outDir} 
+
+python ${params.iCallSV.icallsv_program} \
+    -sc ${params.iCallSV.svConfig} \
+    --caseBam ${bamfile} \
+    --controlBam ${params.iCallSV.controlBAMFile} \
+    --caseId ${params.SAMPLE_NAME} \
+    --controlId ${params.iCallSV.controlID} \
+    --outDir ${params.iCallSV.outDir} \
+    --outPrefix ${params.iCallSV.outPrefix} 2>> ${params.iCallSV.log}
+
+cat ${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_final.txt | head -n 1 >${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_only_final.txt 2>> ${params.iCallSV.log}
+cat ${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_final.txt | grep -P '\tTRA\t' |cat >>${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_only_final.txt 2>> ${params.iCallSV.log}
+cat ${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_final.txt | grep -P '\tINV\t' |cat >>${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_only_final.txt 2>> ${params.iCallSV.log}
+
+cp ${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_merged.txt  ${params.SAMPLE_DIR}/${params.iCallSV.outPrefix}_merged.xls 
+cp ${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_final.txt  ${params.SAMPLE_DIR}/${params.iCallSV.outPrefix}_final.xls
+cp ${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_only_final.txt  ${params.SAMPLE_DIR}/${params.iCallSV.outPrefix}_only_final.xls
+
+"""	
+}
+
+
+
 process generate_metrics_file {
 
 publishDir params.SAMPLE_DIR, mode: 'copy', overwrite: true,pattern: "*.csv"
@@ -175,6 +215,7 @@ PROBE_TARGET_BED_FILE= file(params.TARGET_BED_FILE)
 METRICS_SCRIPT=file(params.generate_metrics_file.METRICS_SCRIPT)
 
 input:
+  //file icalFile from outputICallSV 
   file bamfile from dedup
   file vcffile from outputVcf
   file baibamfile from dedupbai
@@ -255,6 +296,7 @@ input:
   file merge_log from merging_log.collect()
   file vardict_log from vardict_log.collect()
   file metrics_log from generate_metrics_file_log.collect()
+  file iCallSV_log from iCallSV_log.collect()
 
 
 output:
@@ -283,6 +325,15 @@ script:
         done
 
         for f in ${vardict_log};
+        do
+            echo "" >>${params.merge_log_benchmark_files.final_logs}
+            echo "##---------------------------------------------------------##" >>${params.merge_log_benchmark_files.final_logs}
+            echo "##-------------" \$f "-------------##" >>${params.merge_log_benchmark_files.final_logs}
+            echo "##---------------------------------------------------------##" >>${params.merge_log_benchmark_files.final_logs}
+            cat \$f >>${params.merge_log_benchmark_files.final_logs}
+        done
+
+        for f in ${iCallSV_log};
         do
             echo "" >>${params.merge_log_benchmark_files.final_logs}
             echo "##---------------------------------------------------------##" >>${params.merge_log_benchmark_files.final_logs}
