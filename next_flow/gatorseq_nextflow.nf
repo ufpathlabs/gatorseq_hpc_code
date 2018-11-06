@@ -98,6 +98,7 @@ input:
 
 output:
   file "${params.vardict.vcf_file}" into outputVcf
+  file "${params.vardict.vep_vcf_file}" into outputVepVcf
   file "${params.vardict.log}" into vardict_log
   
 """	
@@ -122,7 +123,7 @@ output:
 	
 	tabix -f ${params.vardict.vardict_vcf_file}.gz &>> ${params.vardict.log} 
 	
-	#vt decompose -s ${params.vardict.vardict_vcf_file}.gz  2>> ${params.vardict.log}  |	vt normalize -r ${params.human_ref_fasta} - 2>> ${params.vardict.log}  | vcf-sort >${params.vardict.vcf_file}  2>> ${params.vardict.log} 
+	vt decompose -s ${params.vardict.vardict_vcf_file}.gz  2>> ${params.vardict.log}  |	vt normalize -r ${params.human_ref_fasta} - 2>> ${params.vardict.log}  | vcf-sort >${params.vardict.vcf_file}  2>> ${params.vardict.log} 
     
 	vt decompose -s ${params.vardict.vardict_vcf_file}.gz -o ${params.vardict.decompose_vcf_file} &>> ${params.vardict.log}
     normVCF -o ${params.vardict.norm_vcf_file} --reference ${params.human_ref_fasta} --sample ${params.vardict.decompose_vcf_file} &>> ${params.vardict.log}
@@ -140,7 +141,7 @@ output:
         --assembly ${params.VEP_ASSEMBLY} \
         --input_file ${params.vardict.transvar_vcf_file} \
         --format vcf \
-        --output_file ${params.vardict.vcf_file} \
+        --output_file ${params.vardict.vep_vcf_file} \
         --force_overwrite \
         --stats_file ${params.vardict.vep_stat_file} \
         --cache \
@@ -218,6 +219,7 @@ input:
   //file icalFile from outputICallSV 
   file bamfile from dedup
   file vcffile from outputVcf
+  file vcfvepfile from outputVepVcf
   file baibamfile from dedupbai
   file merged_target_bed_file from MERGED_TARGET_BED_FILE
   file padded_target_bed_file from PADDED_TARGET_BED_FILE
