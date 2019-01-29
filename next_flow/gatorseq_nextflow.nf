@@ -130,7 +130,7 @@ output:
 
 
 process vepAnnot {
-publishDir params.SAMPLE_DIR, mode: 'copy', overwrite: true,pattern: "*.vep.vcf"
+publishDir params.SAMPLE_DIR, mode: 'copy', overwrite: true,pattern: "*.vep.vcf.txt"
 
 input:
   file varDictVcf from outputVcf 
