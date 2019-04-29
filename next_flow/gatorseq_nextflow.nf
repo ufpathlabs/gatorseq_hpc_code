@@ -120,8 +120,10 @@ output:
     bgzip -f ${params.vardict.vardict_vcf_file} &>> ${params.vardict.log} 
 	
 	tabix -f ${params.vardict.vardict_vcf_file}.gz &>> ${params.vardict.log} 
+
 	
 	vt decompose -s ${params.vardict.vardict_vcf_file}.gz  2>> ${params.vardict.log}  |	vt normalize -r ${params.human_ref_fasta} - 2>> ${params.vardict.log}  | vcf-sort >${params.vardict.vcf_file}  2>> ${params.vardict.log} 
+    sed -i '1 a ##reference=NCBIb37' ${params.vardict.vcf_file}
     
 	unset _JAVA_OPTIONS;
 """
