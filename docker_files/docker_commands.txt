@@ -1,0 +1,31 @@
+#Create Docker Images:
+sudo docker images
+cat bwa_sambamba.1.3.Dockerfile  | docker build  -t srikarchamala/bwa_sambamba:1.3 -f - .
+cat vardictjava.1.0.Dockerfile  | docker build  -t srikarchamala/vardictjava:1.2 -f - .
+cat generatematrix.1.3.Dockerfile  | docker build  -t srikarchamala/generatematrix:1.3 -f - .
+cat icallsv.1.2.Dockerfile  | docker build  -t srikarchamala/icallsv:1.2 -f - .
+
+#Pushing Docker Image:
+sudo docker images
+docker push srikarchamala/bwa_sambamba:1.3
+docker push srikarchamala/vardictjava:1.3
+docker push srikarchamala/generatematrix:1.3
+docker push srikarchamala/icallsv:1.2
+
+
+## tagining using image id
+sudo docker tag 6282b708659c srikarchamala/bwa_sambamba:1.0
+
+##Spinning a image and working inside the image:
+sudo docker run -a stdin -a stdout -i -t srikarchamala/bwa_sambamba:1.0 /bin/bash 
+
+#Delete all containers which are not active for past 12 hours:
+sudo docker container prune --filter "until=12h" 
+
+#List all the active containers:
+sudo docker container ls -a 
+
+#Udate the modified docker container changes into the image; here the id is container id (e33015b4afcc) not image id:
+sudo docker commit e33015b4afcc harsh0280/generatematrix:1.0 
+
+

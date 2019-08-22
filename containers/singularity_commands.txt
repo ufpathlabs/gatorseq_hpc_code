@@ -1,0 +1,3 @@
+module load singularity/3.3.0; singularity exec srikarchamala-icallsv-1.1.img /bin/bash
+module load singularity/3.3.0; singularity shell srikarchamala-icallsv-1.1.img 
+
