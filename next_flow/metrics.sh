@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 BAM_FILE=$1
 VCF_FILE=$2
 METRICS_OUT_FILE=$3

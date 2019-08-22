@@ -102,30 +102,43 @@ output:
   
 """	
 	
-	#eval "module load gcc/5.2.0; module load vardictjava/20160521; module load perl/5.20.0; module load R/3.0.2; module load vcftools/0.1.14; module load vt/20160129;"
-	
-	unset _JAVA_OPTIONS; export _JAVA_OPTIONS="-Xms2g -Xmx20g";
-	
-	#/apps/gcc/5.2.0/vardictjava/20160521/build/install/VarDict/bin/VarDict
-	${params.vardict.vardict_program} \
-            -G ${params.human_ref_fasta} \
-            -f ${params.vardict.AF_THR} -N ${params.SAMPLE_NAME} -b ${bamfile} \
-            -c 1 -S 2 -E 3 -g 4 \
-            -th 8 -t -r 4 -B 2 -m 6 -P 5 -O 25 -q 25 ${bedpath} 2>> ${params.vardict.log}  | \
-        /apps/gcc/5.2.0/vardictjava/20160521/VarDict/teststrandbias.R 2>> ${params.vardict.log} | \
-        /apps/gcc/5.2.0/vardictjava/20160521/VarDict/var2vcf_valid.pl -N ${params.SAMPLE_NAME} -E -f ${params.vardict.AF_THR} \
+    #https://gitter.im/nextflow-io/nextflow/archives/2018/01/30
+    #https://gitter.im/nextflow-io/nextflow/archives/2017/06/02
+
+    which VarDict 2> ${params.vardict.log}
+    VarDict \
+        -G ${params.human_ref_fasta} \
+        -f ${params.vardict.AF_THR} -N ${params.SAMPLE_NAME} -b ${bamfile} \
+        -c 1 -S 2 -E 3 -g 4 \
+        -th 8 -t -r 4 -B 2 -m 6 -P 5 -O 25 -q 25 ${bedpath} \
+        > ${params.vardict.VarDict_out_file} 2>> ${params.vardict.log}  
+
+    which teststrandbias.R 2>> ${params.vardict.log}
+
+    cat ${params.vardict.VarDict_out_file} | \
+        teststrandbias.R \
+        > ${params.vardict.teststrandbias_out_file} 2>> ${params.vardict.log} 
+
+    which var2vcf_valid.pl 2>> ${params.vardict.log}
+    cat ${params.vardict.teststrandbias_out_file} | \
+            var2vcf_valid.pl \
+            -N ${params.SAMPLE_NAME} \
+            -E -f ${params.vardict.AF_THR} \
         > ${params.vardict.vardict_vcf_file}  2>> ${params.vardict.log} 
 	
 
     bgzip -f ${params.vardict.vardict_vcf_file} &>> ${params.vardict.log} 
-	
 	tabix -f ${params.vardict.vardict_vcf_file}.gz &>> ${params.vardict.log} 
 
 	
-	vt decompose -s ${params.vardict.vardict_vcf_file}.gz  2>> ${params.vardict.log}  |	vt normalize -r ${params.human_ref_fasta} - 2>> ${params.vardict.log}  | vcf-sort >${params.vardict.vcf_file}  2>> ${params.vardict.log} 
+    which vt 2>> ${params.vardict.log}
+	vt decompose -s ${params.vardict.vardict_vcf_file}.gz  2>> ${params.vardict.log}  |	\
+    vt normalize -r ${params.human_ref_fasta} - 2>> ${params.vardict.log}  | \
+    vcf-sort >${params.vardict.vcf_file}  2>> ${params.vardict.log} 
+
     sed -i '1 a ##reference=NCBIb37' ${params.vardict.vcf_file}
+
     
-	unset _JAVA_OPTIONS;
 """
 
 }
@@ -203,9 +216,10 @@ output:
   
 """	
 mkdir ${params.iCallSV.outDir} 
+cat  ${params.iCallSV.svConfig} | sed "s|PATH_FOR_REFRENCE_GENOME|${params.human_ref_fasta}|g" | sed "s|ICALLSV_RESOURCES|${params.icallsv_resources_folder}|g" >${params.iCallSV.iCallSV_Config}
 
 python ${params.iCallSV.icallsv_program} \
-    -sc ${params.iCallSV.svConfig} \
+    -sc ${params.iCallSV.iCallSV_Config} \
     --caseBam ${bamfile} \
     --controlBam ${params.iCallSV.controlBAMFile} \
     --caseId ${params.SAMPLE_NAME} \
@@ -283,7 +297,7 @@ output:
 	
 	rtg vcfstats ${vcffile} >${params.generate_metrics_file.rtgtools_stats_out} 2>> ${params.generate_metrics_file.log}
 	
-	sh ${metrics_script} \
+	bash ${metrics_script} \
             ${bamfile} \
             ${vcffile} \
             ${params.generate_metrics_file.metrics_file} \
