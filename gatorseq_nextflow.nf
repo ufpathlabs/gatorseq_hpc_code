@@ -408,18 +408,18 @@ workflow.onError {
 }
 
 def onstart(){
-	#createFile(ON_START_FILE,"Workflow started at\t")
-	file = new File(name)
+	//createFile(ON_START_FILE,"Workflow started at\t")
+	file = new File(ON_START_FILE)
+	file.append( "STARTED\n")
 
-	println "STARTED"
-    
-    println "Start Timestamp : $workflow.start"
-    println "Project : $workflow.projectDir"
-    println "Git info: $workflow.repository - $workflow.revision [$workflow.commitId]"
-    println "Cmd line: $workflow.commandLine"
-    println "Manifest's pipeline version: $workflow.manifest.version"
-    println "Containers: $workflow.container"
-    println "containerEngine: $workflow.containerEngine"
+    file.append("Start Timestamp:\t$workflow.start\n")
+    file.append("Project:\t$workflow.projectDir\n")
+    file.append("Git info:\t$workflow.repository - $workflow.revision [$workflow.commitId]\n")
+    file.append("Cmd line:\t$workflow.commandLine\n")
+    file.append("Manifest's pipeline version:\t$workflow.manifest.version\n")
+    file.append("Containers:\t$workflow.container\n")
+    file.append("Container Engine:\t$workflow.containerEngine\n")
+
 	}
 
 def onsuccess(){
