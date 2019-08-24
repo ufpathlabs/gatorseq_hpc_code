@@ -434,9 +434,6 @@ def onfailure(){
 
 def createFile(name,message){
 	file = new File(name)
-	file.append( "GSBW_VERSION:\t")
-	file.append(params.GSBW_VERSION)
-	file.append("\n")
 	file.append(message)
 	file.append("yyyy:mm:dd:hh:mm:ss\t" )
 	file.append(new Date().format( 'yyyy:MM:dd:hh:mm:ss' ))
