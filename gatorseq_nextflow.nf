@@ -47,6 +47,7 @@ output:
         -t ${params.bwa_map_sort.threads} \
         -M ${params.human_ref_bwa} \
         ${r1} ${r2} 2> ${s}${params.bwa_map_sort.log} |\
+
     sambamba view --sam-input \
         --compression-level ${params.bwa_map_sort.compression_level}   \
         --nthreads ${params.bwa_map_sort.sambamba_threads}  \
@@ -416,9 +417,6 @@ def onstart(){
     file.append("Project:\t$workflow.projectDir\n")
     file.append("Git info:\t$workflow.repository - $workflow.revision [$workflow.commitId]\n")
     file.append("Cmd line:\t$workflow.commandLine\n")
-    file.append("Manifest's pipeline version:\t$workflow.manifest.version\n")
-    file.append("Containers:\t$workflow.container\n")
-    file.append("Container Engine:\t$workflow.containerEngine\n")
 
 	}
 
