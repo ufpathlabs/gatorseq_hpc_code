@@ -240,6 +240,54 @@ cp ${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_only_final.txt  ${para
 }
 
 
+process mSINGS {
+
+publishDir params.SAMPLE_DIR, mode: 'copy', overwrite: true,pattern: "*.mSINGS.txt"
+
+input:
+  file bamfile from dedup
+  file baibamfile from dedupbai
+
+output:
+  file "${params.mSINGS.msi_analyzer_output}" into outputMSINGS
+  file "${params.mSINGS.log}" into mSINGS_log
+  
+"""	
+	
+    current_dir=$(pwd)
+    echo "Starting MSI Analysis of ${params.SAMPLE_NAME}" > ${params.mSINGS.log};
+
+    echo "sorting bam" >> ${params.mSINGS.log};
+    date +"%D %H:%M" >> ${params.mSINGS.log};
+    samtools sort ${bamfile} ${params.mSINGS.sorted_bam} && samtools index ${params.mSINGS.sorted_bam}.bam &>> ${params.mSINGS.log};
+
+    #echo "Making mpileups" >> ${params.mSINGS.log};
+    #date +"%D %H:%M" >> ${params.mSINGS.log};
+    #samtools mpileup -f ${params.human_ref_fasta} -d 100000 -A -E  ${params.mSINGS.sorted_bam}.bam -l ${params.mSINGS.intervals_file} | awk '{if($4 >= 6) print $0}' > ${params.mSINGS.mpileup_file} &>> ${params.mSINGS.log};
+
+    
+    #echo "Varscan Readcounts start" >> ${params.mSINGS.log};
+    #date +"%D %H:%M" >> ${params.mSINGS.log};
+    #java -Xmx4g -jar VarScan.v2.3.7.jar readcounts ${params.mSINGS.mpileup_file} --variants-file ${params.mSINGS.intervals_file} --min-base-qual 10 --output-file ${params.mSINGS.varscan_readcounts_file}  &>> ${params.mSINGS.log}; &
+    #wait
+
+    #echo "MSI Analyzer start" >> ${params.mSINGS.log};
+    #date +"%D %H:%M" >> ${params.mSINGS.log};
+    #msi analyzer ${params.mSINGS.varscan_readcounts_file} ${params.mSINGS.bed_file} -o ${params.mSINGS.msi_analyzer_output} &>> ${params.mSINGS.log};
+
+    #echo "MSI calls start" >> ${params.mSINGS.log};
+    #date +"%D %H:%M" >> ${params.mSINGS.log};
+    #msi count_msi_samples ${params.mSINGS.msi_baseline} $current_dir -m ${params.mSINGS.multiplier} -t ${params.mSINGS.msi_min_threshold} ${params.mSINGS.msi_max_threshold} -o ${params.SAMPLE_NAME}.MSI_Analysis.txt &>> ${params.mSINGS.log};
+
+    touch ${params.mSINGS.msi_analyzer_output}
+    echo "Completed MSI Analysis" >> ${params.mSINGS.log};
+    date +"%D %H:%M" >> ${params.mSINGS.log};
+
+"""
+
+}
+
+
 process generate_metrics_file {
 
 publishDir params.SAMPLE_DIR, mode: 'copy', overwrite: true,pattern: "*.csv"
