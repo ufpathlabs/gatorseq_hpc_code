@@ -249,17 +249,16 @@ input:
   file baibamfile from dedupbai
 
 output:
-  file "${params.mSINGS.msi_analyzer_output}" into outputMSINGS
-  file "${params.mSINGS.log}" into mSINGS_log
+  file "${params.merging.msi_analyzer_output}" into outputMSINGS 
   
 """	
 	
     current_dir=$(pwd)
     echo "Starting MSI Analysis of ${params.SAMPLE_NAME}" > ${params.mSINGS.log};
 
-    echo "sorting bam" >> ${params.mSINGS.log};
-    date +"%D %H:%M" >> ${params.mSINGS.log};
-    samtools sort ${bamfile} ${params.mSINGS.sorted_bam} && samtools index ${params.mSINGS.sorted_bam}.bam &>> ${params.mSINGS.log};
+    #echo "sorting bam" >> ${params.mSINGS.log};
+    #date +"%D %H:%M" >> ${params.mSINGS.log};
+    #samtools sort ${bamfile} ${params.mSINGS.sorted_bam} && samtools index ${params.mSINGS.sorted_bam}.bam &>> ${params.mSINGS.log};
 
     #echo "Making mpileups" >> ${params.mSINGS.log};
     #date +"%D %H:%M" >> ${params.mSINGS.log};
