@@ -209,7 +209,8 @@ input:
   file baibamfile from dedupbai
 
 output:
-  file "${params.mSINGS.msi_analysis_output}" into outputMsings
+  file "${params.mSINGS.msi_analysis_output}" into outputMsingsAnalysis
+  file "${params.mSINGS.msi_analyzer_output}" into outputMsingsAnalyzer
   file "${params.mSINGS.log}" into msings_log
   
 """	
