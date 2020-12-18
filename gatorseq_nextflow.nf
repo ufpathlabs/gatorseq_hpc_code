@@ -473,6 +473,7 @@ workflow.onError {
 }
 
 def onstart(){
+    println ON_START_FILE
 	//createFile(ON_START_FILE,"Workflow started at\t")
 	file = new File(ON_START_FILE)
 	file.append( "STARTED\n")
