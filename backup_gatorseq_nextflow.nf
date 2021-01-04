@@ -202,50 +202,50 @@ output:
 }
 
 process mSINGS {
-//publishDir params.SAMPLE_DIR, mode: 'copy', overwrite: true,pattern: "*.msi.txt"
+publishDir params.SAMPLE_DIR, mode: 'copy', overwrite: true,pattern: "*.msi.txt"
 
 input:
   file bamfile from dedup
   file baibamfile from dedupbai
 
 output:
-  //file "${params.mSINGS.msi_analysis_output}" into outputMsings
+  file "${params.mSINGS.msi_analysis_output}" into outputMsings
   file "${params.mSINGS.log}" into msings_log
   
 """	
     echo "Starting MSI Analysis of ${params.SAMPLE_NAME}" > ${params.mSINGS.log};
     echo " "
 
-    ##echo "sorting bam" >> ${params.mSINGS.log};
-    ##date +"%D %H:%M" >> ${params.mSINGS.log};
-    ##samtools sort ${bamfile} ${params.mSINGS.sorted_bam} &>> ${params.mSINGS.log};
-    ##samtools index ${params.mSINGS.sorted_bam}.bam &>> ${params.mSINGS.log};
-    ##echo " "
-
-    #echo "Making mpileups" >> ${params.mSINGS.log};
+    #echo "sorting bam" >> ${params.mSINGS.log};
     #date +"%D %H:%M" >> ${params.mSINGS.log};
-    ##samtools mpileup -f ${params.human_ref_fasta} -d 100000 -A -E  ${params.mSINGS.sorted_bam}.bam -l ${params.mSINGS.intervals_file} > ${params.mSINGS.mpileup_file} 2>> ${params.mSINGS.log};
-    #samtools mpileup -f ${params.human_ref_fasta} -d 100000 -A -E  ${bamfile} -l ${params.mSINGS.intervals_file} > ${params.mSINGS.mpileup_file} 2>> ${params.mSINGS.log};
-    #cat ${params.mSINGS.mpileup_file} | awk '{if(\$4 >= 6) print \$0}' > ${params.mSINGS.mpileup_file_filtered} 2>> ${params.mSINGS.log};
+    #samtools sort ${bamfile} ${params.mSINGS.sorted_bam} &>> ${params.mSINGS.log};
+    #samtools index ${params.mSINGS.sorted_bam}.bam &>> ${params.mSINGS.log};
     #echo " "
 
-    #echo "Varscan Readcounts start" >> ${params.mSINGS.log};
-    #date +"%D %H:%M" >> ${params.mSINGS.log};
-    ##java -Xmx4g -jar /msings/msings/msings-env/bin/VarScan.v2.3.7.jar readcounts ${params.mSINGS.mpileup_file_filtered} --variants-file ${params.mSINGS.intervals_file} --min-base-qual 10 --output-file ${params.mSINGS.varscan_readcounts_file}  &>> ${params.mSINGS.log}; 
-    #varscan readcounts ${params.mSINGS.mpileup_file_filtered} --variants-file ${params.mSINGS.intervals_file} --min-base-qual 10 --output-file ${params.mSINGS.varscan_readcounts_file}  &>> ${params.mSINGS.log}; 
-    #echo " "
+    echo "Making mpileups" >> ${params.mSINGS.log};
+    date +"%D %H:%M" >> ${params.mSINGS.log};
+    #samtools mpileup -f ${params.human_ref_fasta} -d 100000 -A -E  ${params.mSINGS.sorted_bam}.bam -l ${params.mSINGS.intervals_file} > ${params.mSINGS.mpileup_file} 2>> ${params.mSINGS.log};
+    samtools mpileup -f ${params.human_ref_fasta} -d 100000 -A -E  ${bamfile} -l ${params.mSINGS.intervals_file} > ${params.mSINGS.mpileup_file} 2>> ${params.mSINGS.log};
+    cat ${params.mSINGS.mpileup_file} | awk '{if(\$4 >= 6) print \$0}' > ${params.mSINGS.mpileup_file_filtered} 2>> ${params.mSINGS.log};
+    echo " "
 
-    #echo "MSI Analyzer start" >> ${params.mSINGS.log};
-    #date +"%D %H:%M" >> ${params.mSINGS.log};
-    #msi analyzer ${params.mSINGS.varscan_readcounts_file} ${params.mSINGS.bed_file} -o ${params.mSINGS.msi_analyzer_output} &>> ${params.mSINGS.log};
-    #echo " "
+    echo "Varscan Readcounts start" >> ${params.mSINGS.log};
+    date +"%D %H:%M" >> ${params.mSINGS.log};
+    #java -Xmx4g -jar /msings/msings/msings-env/bin/VarScan.v2.3.7.jar readcounts ${params.mSINGS.mpileup_file_filtered} --variants-file ${params.mSINGS.intervals_file} --min-base-qual 10 --output-file ${params.mSINGS.varscan_readcounts_file}  &>> ${params.mSINGS.log}; 
+    varscan readcounts ${params.mSINGS.mpileup_file_filtered} --variants-file ${params.mSINGS.intervals_file} --min-base-qual 10 --output-file ${params.mSINGS.varscan_readcounts_file}  &>> ${params.mSINGS.log}; 
+    echo " "
 
-    #echo "MSI calls start" >> ${params.mSINGS.log};
-    #date +"%D %H:%M" >> ${params.mSINGS.log};
-    #mkdir ${params.mSINGS.outDir} 
-    #cp ${params.mSINGS.msi_analyzer_output} ${params.mSINGS.outDir} 
-    #msi count_msi_samples ${params.mSINGS.msi_baseline} ${params.mSINGS.outDir} -m ${params.mSINGS.multiplier} -t ${params.mSINGS.msi_min_threshold} ${params.mSINGS.msi_max_threshold} -o ${params.mSINGS.msi_analysis_output} &>> ${params.mSINGS.log};
-    #echo ""
+    echo "MSI Analyzer start" >> ${params.mSINGS.log};
+    date +"%D %H:%M" >> ${params.mSINGS.log};
+    msi analyzer ${params.mSINGS.varscan_readcounts_file} ${params.mSINGS.bed_file} -o ${params.mSINGS.msi_analyzer_output} &>> ${params.mSINGS.log};
+    echo " "
+
+    echo "MSI calls start" >> ${params.mSINGS.log};
+    date +"%D %H:%M" >> ${params.mSINGS.log};
+    mkdir ${params.mSINGS.outDir} 
+    cp ${params.mSINGS.msi_analyzer_output} ${params.mSINGS.outDir} 
+    msi count_msi_samples ${params.mSINGS.msi_baseline} ${params.mSINGS.outDir} -m ${params.mSINGS.multiplier} -t ${params.mSINGS.msi_min_threshold} ${params.mSINGS.msi_max_threshold} -o ${params.mSINGS.msi_analysis_output} &>> ${params.mSINGS.log};
+    echo ""
 
     echo "Completed MSI Analysis" >> ${params.mSINGS.log};
     date +"%D %H:%M" >> ${params.mSINGS.log};
@@ -264,34 +264,29 @@ input:
   file dummyOutputVepVcf from outputVepVcf 
 
 output:
-  //file "${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_only_final.txt" into outputICallSV
+  file "${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_only_final.txt" into outputICallSV
   file "${params.iCallSV.log}" into iCallSV_log
   
 """	
-    echo "Started iCallSV Analysis" >${params.iCallSV.log} ;
-    date +"%D %H:%M" >> ${params.iCallSV.log};
-    echo "Completed iCallSV Analysis" >> ${params.iCallSV.log};
-    date +"%D %H:%M" >> ${params.iCallSV.log};
+mkdir ${params.iCallSV.outDir} 
+cat  ${params.iCallSV.svConfig} | sed "s|PATH_FOR_REFRENCE_GENOME|${params.human_ref_fasta}|g" | sed "s|ICALLSV_RESOURCES|${params.icallsv_resources_folder}|g" >${params.iCallSV.iCallSV_Config}
 
-#mkdir ${params.iCallSV.outDir} 
-#cat  ${params.iCallSV.svConfig} | sed "s|PATH_FOR_REFRENCE_GENOME|${params.human_ref_fasta}|g" | sed "s|ICALLSV_RESOURCES|${params.icallsv_resources_folder}|g" >${params.iCallSV.iCallSV_Config}
+python ${params.iCallSV.icallsv_program} \
+    -sc ${params.iCallSV.iCallSV_Config} \
+    --caseBam ${bamfile} \
+    --controlBam ${params.iCallSV.controlBAMFile} \
+    --caseId ${params.SAMPLE_NAME} \
+    --controlId ${params.iCallSV.controlID} \
+    --outDir ${params.iCallSV.outDir} \
+    --outPrefix ${params.iCallSV.outPrefix} 2>> ${params.iCallSV.log}
 
-#python ${params.iCallSV.icallsv_program} \
-#    -sc ${params.iCallSV.iCallSV_Config} \
-#    --caseBam ${bamfile} \
-#    --controlBam ${params.iCallSV.controlBAMFile} \
-#    --caseId ${params.SAMPLE_NAME} \
-#    --controlId ${params.iCallSV.controlID} \
-#    --outDir ${params.iCallSV.outDir} \
-#    --outPrefix ${params.iCallSV.outPrefix} 2>> ${params.iCallSV.log}
+cat ${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_final.txt | head -n 1 >${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_only_final.txt 2>> ${params.iCallSV.log}
+cat ${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_final.txt | grep -P '\tTRA\t' |cat >>${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_only_final.txt 2>> ${params.iCallSV.log}
+cat ${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_final.txt | grep -P '\tINV\t' |cat >>${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_only_final.txt 2>> ${params.iCallSV.log}
 
-#cat ${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_final.txt | head -n 1 >${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_only_final.txt 2>> ${params.iCallSV.log}
-#cat ${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_final.txt | grep -P '\tTRA\t' |cat >>${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_only_final.txt 2>> ${params.iCallSV.log}
-#cat ${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_final.txt | grep -P '\tINV\t' |cat >>${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_only_final.txt 2>> ${params.iCallSV.log}
-
-#cp ${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_merged.txt  ${params.SAMPLE_DIR}/${params.iCallSV.outPrefix}_merged.xls 
-#cp ${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_final.txt  ${params.SAMPLE_DIR}/${params.iCallSV.outPrefix}_final.xls
-#cp ${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_only_final.txt  ${params.SAMPLE_DIR}/${params.iCallSV.outPrefix}_only_final.xls
+cp ${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_merged.txt  ${params.SAMPLE_DIR}/${params.iCallSV.outPrefix}_merged.xls 
+cp ${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_final.txt  ${params.SAMPLE_DIR}/${params.iCallSV.outPrefix}_final.xls
+cp ${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_only_final.txt  ${params.SAMPLE_DIR}/${params.iCallSV.outPrefix}_only_final.xls
 
 """	
 }
