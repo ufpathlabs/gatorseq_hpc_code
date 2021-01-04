@@ -307,7 +307,7 @@ PROBE_TARGET_BED_FILE= file(params.TARGET_BED_FILE)
 METRICS_SCRIPT=file(params.generate_metrics_file.METRICS_SCRIPT)
 
 input:
-  file icalFile from outputICallSV 
+  //file icalFile from outputICallSV 
   file bamfile from dedup
   file vcffile from outputVcf
   file vcfvepfile from outputVepVcf
