@@ -31,7 +31,6 @@ println params.dummy_rg_id
 
 
 echo true
-scratch false
 
 input:
     set s, r1, r2 from read_pairs
