@@ -16,10 +16,21 @@ Channel
     .map{b->[sample(b[1]),b[1],b[2]]}
     .set {read_pairs}
 
+human_ref_bwa_files = Channel.fromFilePath(params.human_ref_bwa_files)
+       .first()
+       .map{b->getPathBeforeDot(b)}
+
 def sample(Path path){
     def name = path.getFileName().toString()
     int start = Math.max(0, name.lastIndexOf('/'))
     return name.substring(start)
+}
+
+def getPathBeforeDot(Path path){
+    def name = path.toString()
+    int start = Math.max(0, name.lastIndexOf('/')) + 1
+    int end = Math.max(0, name.lastIndexOf('.'))
+    return name.substring(start, end)
 }
 
 print read_pairs 
@@ -33,7 +44,8 @@ println params.dummy_rg_id
 echo true
 
 input:
-    set s, r1, r2 from read_pairs
+    set s, file(r1), file(r2) from read_pairs
+    val x from human_ref_bwa_files
 	
 output:
 	file "${s}.bwa_map_sort.bam" into contigsBam
@@ -45,7 +57,7 @@ output:
 
 	bwa mem  -R ${params.dummy_rg_id} \
         -t ${params.bwa_map_sort.threads} \
-        -M ${params.human_ref_bwa} \
+        -M $x \
         ${r1} ${r2} 2> ${s}${params.bwa_map_sort.log} |\
 
     sambamba view --sam-input \
