@@ -16,10 +16,20 @@ Channel
     .map{b->[sample(b[1]),b[1],b[2]]}
     .set {read_pairs}
 
+human_ref_bwa = Channel.value(params.human_ref_bwa)
+                      .map{b->getPathBeforeSlash(b)}
+
+bwa_files = Channel.fromPath(params.human_ref_bwa_files)
+
 def sample(Path path){
     def name = path.getFileName().toString()
     int start = Math.max(0, name.lastIndexOf('/'))
     return name.substring(start)
+}
+
+def getPathBeforeSlash(String path){
+    int start = Math.max(0, path.lastIndexOf('/')) + 1
+    return path.substring(start)
 }
 
 print read_pairs 
@@ -33,7 +43,9 @@ println params.dummy_rg_id
 echo true
 
 input:
-    set s, r1, r2 from read_pairs
+    set s, file(r1), file(r2) from read_pairs
+    file bwa_file from bwa_files.collect()
+    val prefix from human_ref_bwa
 	
 output:
 	file "${s}.bwa_map_sort.bam" into contigsBam
@@ -45,7 +57,7 @@ output:
 
 	bwa mem  -R ${params.dummy_rg_id} \
         -t ${params.bwa_map_sort.threads} \
-        -M ${params.human_ref_bwa} \
+        -M $prefix \
         ${r1} ${r2} 2> ${s}${params.bwa_map_sort.log} |\
 
     sambamba view --sam-input \
@@ -96,6 +108,8 @@ input:
   file bamfile from dedup
   file baibamfile from dedupbai
   file bedpath from PADDED_TARGET_BED_FILE
+  path human_ref_fasta_path from params.human_ref_fasta
+  path human_ref_fasta_fai_path from params.human_ref_fasta_fai
 
 output:
   file "${params.vardict.vcf_file}" into outputVcf
@@ -108,7 +122,7 @@ output:
 
     which VarDict 2> ${params.vardict.log}
     VarDict \
-        -G ${params.human_ref_fasta} \
+        -G $human_ref_fasta_path \
         -f ${params.vardict.AF_THR} -N ${params.SAMPLE_NAME} -b ${bamfile} \
         -c 1 -S 2 -E 3 -g 4 \
         -th 8 -t -r 4 -B 2 -m 6 -P 5 -O 25 -q 25 ${bedpath} \
@@ -134,7 +148,7 @@ output:
 	
     which vt 2>> ${params.vardict.log}
 	vt decompose -s ${params.vardict.vardict_vcf_file}.gz  2>> ${params.vardict.log}  |	\
-    vt normalize -r ${params.human_ref_fasta} - 2>> ${params.vardict.log}  | \
+    vt normalize -r $human_ref_fasta_path - 2>> ${params.vardict.log}  | \
     vcf-sort >${params.vardict.vcf_file}  2>> ${params.vardict.log} 
 
     sed -i '1 a ##reference=NCBIb37' ${params.vardict.vcf_file}
