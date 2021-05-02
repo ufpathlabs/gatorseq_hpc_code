@@ -353,8 +353,6 @@ input:
   file vepAnnot_log from vepAnnot_log.collect()
   file metrics_log from generate_metrics_file_log.collect()
   file iCallSV_log from iCallSV_log.collect()
-  file msings_log from msings_log.collect()
-  
 
 
 output:
@@ -408,16 +406,6 @@ script:
             echo "##---------------------------------------------------------##" >>${params.merge_log_benchmark_files.final_logs}
             cat \$f >>${params.merge_log_benchmark_files.final_logs}
         done
-
-        for f in ${msings_log};
-        do
-            echo "" >>${params.merge_log_benchmark_files.final_logs}
-            echo "##---------------------------------------------------------##" >>${params.merge_log_benchmark_files.final_logs}
-            echo "##-------------" \$f "-------------##" >>${params.merge_log_benchmark_files.final_logs}
-            echo "##---------------------------------------------------------##" >>${params.merge_log_benchmark_files.final_logs}
-            cat \$f >>${params.merge_log_benchmark_files.final_logs}
-        done
-
 
 
 """
