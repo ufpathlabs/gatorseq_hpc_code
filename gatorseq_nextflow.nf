@@ -75,6 +75,7 @@ output:
         --compression-level=${params.bwa_map_sort.compression_level}    \
         ${s}.bwa_map.bam 2>> ${s}${params.bwa_map_sort.log}
 
+    cat ${s}.bwa_map_sort.bam
     #if [ -d ${params.bwa_map_sort.temp_dir} ]; then rmdir ${params.bwa_map_sort.temp_dir}; fi
 	
 	"""
