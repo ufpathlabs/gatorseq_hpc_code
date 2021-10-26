@@ -216,25 +216,29 @@ output:
   file "${params.iCallSV.log}" into iCallSV_log
   
 """	
-mkdir ${params.iCallSV.outDir} 
-cat  ${params.iCallSV.svConfig} | sed "s|PATH_FOR_REFRENCE_GENOME|${params.human_ref_fasta}|g" | sed "s|ICALLSV_RESOURCES|${params.icallsv_resources_folder}|g" >${params.iCallSV.iCallSV_Config}
+mkdir ${params.iCallSV.outDir}
+mkdir -p ${params.iCallSV.DellyDir}
+touch ${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_only_final.txt
+touch ${params.iCallSV.log}
 
-python ${params.iCallSV.icallsv_program} \
-    -sc ${params.iCallSV.iCallSV_Config} \
-    --caseBam ${bamfile} \
-    --controlBam ${params.iCallSV.controlBAMFile} \
-    --caseId ${params.SAMPLE_NAME} \
-    --controlId ${params.iCallSV.controlID} \
-    --outDir ${params.iCallSV.outDir} \
-    --outPrefix ${params.iCallSV.outPrefix} 2>> ${params.iCallSV.log}
+#cat  ${params.iCallSV.svConfig} | sed "s|PATH_FOR_REFRENCE_GENOME|${params.human_ref_fasta}|g" | sed "s|ICALLSV_RESOURCES|${params.icallsv_resources_folder}|g" >${params.iCallSV.iCallSV_Config}
 
-cat ${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_final.txt | head -n 1 >${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_only_final.txt 2>> ${params.iCallSV.log}
-cat ${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_final.txt | grep -P '\tTRA\t' |cat >>${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_only_final.txt 2>> ${params.iCallSV.log}
-cat ${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_final.txt | grep -P '\tINV\t' |cat >>${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_only_final.txt 2>> ${params.iCallSV.log}
+#python ${params.iCallSV.icallsv_program} \
+ #   -sc ${params.iCallSV.iCallSV_Config} \
+ #   --caseBam ${bamfile} \
+ #   --controlBam ${params.iCallSV.controlBAMFile} \
+ #   --caseId ${params.SAMPLE_NAME} \
+  #  --controlId ${params.iCallSV.controlID} \
+ #   --outDir ${params.iCallSV.outDir} \
+ #   --outPrefix ${params.iCallSV.outPrefix} 2>> ${params.iCallSV.log}
 
-cp ${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_merged.txt  ${params.SAMPLE_DIR}/${params.iCallSV.outPrefix}_merged.xls 
-cp ${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_final.txt  ${params.SAMPLE_DIR}/${params.iCallSV.outPrefix}_final.xls
-cp ${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_only_final.txt  ${params.SAMPLE_DIR}/${params.iCallSV.outPrefix}_only_final.xls
+#cat ${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_final.txt | head -n 1 >${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_only_final.txt 2>> ${params.iCallSV.log}
+#cat ${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_final.txt | grep -P '\tTRA\t' |cat >>${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_only_final.txt 2>> ${params.iCallSV.log}
+#cat ${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_final.txt | grep -P '\tINV\t' |cat >>${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_only_final.txt 2>> ${params.iCallSV.log}
+
+#cp ${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_merged.txt  ${params.SAMPLE_DIR}/${params.iCallSV.outPrefix}_merged.xls
+#cp ${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_final.txt  ${params.SAMPLE_DIR}/${params.iCallSV.outPrefix}_final.xls
+#cp ${params.iCallSV.DellyDir}/${params.iCallSV.outPrefix}_only_final.txt  ${params.SAMPLE_DIR}/${params.iCallSV.outPrefix}_only_final.xls
 
 """	
 }
